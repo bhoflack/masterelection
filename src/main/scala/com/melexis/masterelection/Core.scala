@@ -1,5 +1,7 @@
 package com.melexis.masterelection
 
+import java.util.concurrent.Callable
+
 import scala.collection.mutable
 import scala.util.{Try, Success, Failure}
 
@@ -38,4 +40,8 @@ object Core {
     } else {
       Failure(new InvalidTtlException(ttl))
     }
+
+  def asMaster(path: String, job: Callable[Unit]): Unit = {
+    job.call()
+  }
 }

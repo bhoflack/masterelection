@@ -1,6 +1,8 @@
 package com.melexis.masterelection
 
-import com.melexis.masterelection.Core.{InMemoryLockBackend, put}
+import com.melexis.masterelection.Core.{InMemoryLockBackend, asMaster, put}
+
+import java.util.concurrent.Callable
 
 import org.scalacheck.{Gen, Properties}
 import org.scalacheck.Prop.forAll
@@ -57,5 +59,17 @@ object CoreSpecification extends Properties("Core") {
       put(path, value, ttl)(backend) == Success(Some(value))
       Thread.sleep(ttl + 1)
       put(path, value2, ttl)(backend) == Success(Some(value2))
+  }
+
+  property("A job is only performed when i'm the master") = forAll(pathGenerator) {
+    (path) =>
+      val backend = new InMemoryLockBackend
+      var x = 0
+      asMaster(path, new Callable[Unit] {
+        override def call() = x = x + 1
+      })
+
+      Thread.sleep(10)
+      x == 1
   }
 }
