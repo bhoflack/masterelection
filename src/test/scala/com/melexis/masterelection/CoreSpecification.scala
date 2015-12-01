@@ -61,13 +61,23 @@ object CoreSpecification extends Properties("Core") {
       put(path, value2, ttl)(backend) == Success(Some(value2))
   }
 
-  property("A job is only performed when i'm the master") = forAll(pathGenerator) {
+  property("A job is performed when i'm the master") = forAll(pathGenerator) {
     (path) =>
       val backend = new InMemoryLockBackend
       var x = 0
-      asMaster(path, new Callable[Unit] {
+      asMaster(backend)(path, new Callable[Unit] {
         override def call() = x = x + 1
       })
+
+      Thread.sleep(10)
+      x == 1
+  }
+
+  property("A job is only performed by one thread at the same time") = forAll(pathGenerator, numberOfThreadsGenerator) {
+    (path, numberOfThreads) =>
+      val backend = new InMemoryLockBackend
+      var x = 0
+      (0 to numberOfThreads).par.map { _ => asMaster(backend)(path, new Callable[Unit] { override def call() = x = x + 1 }) }
 
       Thread.sleep(10)
       x == 1

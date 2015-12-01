@@ -41,7 +41,8 @@ object Core {
       Failure(new InvalidTtlException(ttl))
     }
 
-  def asMaster(path: String, job: Callable[Unit]): Unit = {
-    job.call()
+  def asMaster(backend: LockBackend)(path: String, job: Callable[Unit]): Unit = {
+    put(path, "x", 100)(backend).map { r => 
+      r.map { _ => job.call }}
   }
 }
